@@ -1,0 +1,94 @@
+#!/usr/bin/env node
+
+const slack = require('../slack')
+const github = require('../github')
+const utils = require('../utils')
+const config = require('../config')
+const moment = require('moment')
+
+const dayOfWeek = new Date().getDay();
+const isWeekend = (dayOfWeek == 6) || (dayOfWeek == 0); // 6 = Saturday, 0 = Sunday
+
+if (isWeekend) {
+  return false // do not run this on the weekends
+}
+
+const subscriptions = config.subscriptions()
+
+
+subscriptions.forEach(subscription => {
+  
+  github.getOpenPullRequests(subscription.githubRepos)
+  .then(openPRs => {
+    
+    let pullRequestsForSlackMessage = {}
+    
+    subscription.githubRepos.forEach((repo, index) => {
+      let pullRequests = openPRs.data[`query${index}`].pullRequests.edges
+      
+      if (pullRequests.length > 0) {
+        
+        pullRequests.forEach(pullRequest => {
+          let thisPullRequest = {
+            title: pullRequest.node.title,
+            url: pullRequest.node.url,
+            authorLogin: pullRequest.node.author.login,
+            authorUrl: pullRequest.node.author.url,
+            createdAt: moment(pullRequest.node.createdAt).unix(),
+            reviewer: '',
+            mergeable: 'false',
+            reviewRequested: 'false',
+            reviewStatus: '',
+            color: ''
+          }
+          
+          if (pullRequest.node.mergeable) {
+            thisPullRequest.mergeable = ':white_check_mark: true'
+          }
+          
+          // only listing one pull request review for now until i hear we need all of them
+          if (pullRequest.node.reviews && pullRequest.node.reviews.edges.length > 0) {
+            thisPullRequest.reviewStatus = utils.capitalCase(pullRequest.node.reviews.edges[0].node.state)
+            
+            switch(thisPullRequest.reviewStatus) {
+              case 'Changes Requested':
+                thisPullRequest.color = 'danger'
+                break;
+              case 'Approved':
+                thisPullRequest.color = 'good'
+                break;
+              case 'Pending':
+                thisPullRequest.color = 'warning'
+                break;
+            }
+            
+            thisPullRequest.reviewRequested = ':white_check_mark: true'
+            thisPullRequest.reviewer = pullRequest.node.reviews.edges[0].node.author.login
+          }
+          
+          if (pullRequest.node.reviewRequests && pullRequest.node.reviewRequests.edges.length > 0) {
+            thisPullRequest.reviewRequested = ':white_check_mark: true'
+          }
+          
+          if (!pullRequestsForSlackMessage[repo.name]) {
+            pullRequestsForSlackMessage[repo.name] = []
+          }
+          
+          pullRequestsForSlackMessage[repo.name].push(thisPullRequest)
+          
+        })
+          
+      }
+      
+      if (index + 1 == subscription.githubRepos.length) {        
+        slack.sendPullRequestsToChannel(subscription.slackChannel, pullRequestsForSlackMessage)
+      }
+      
+    })
+      
+  })
+  .catch(err => {
+    console.log(err)
+  })
+        
+})
