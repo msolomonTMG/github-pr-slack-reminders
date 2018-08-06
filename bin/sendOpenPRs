@@ -30,10 +30,10 @@ subscriptions.forEach(subscription => {
         
         pullRequests.forEach(pullRequest => {
           
-          // if this repo subscription does not filter by author,
-          // or if this author is part of the subscription filter,
-          // continue with the loop. otherwise, skip this iteration
-          if (!repo.authors || repo.authors.includes(pullRequest.node.author.login)) {
+          // if this repo subscription filters by author,
+          // and this author is not part of the subscription filter,
+          // skip this iteration
+          if (repo.authors && !repo.authors.includes(pullRequest.node.author.login)) {
             return
           }
           
