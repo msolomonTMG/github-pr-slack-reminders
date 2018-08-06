@@ -34,7 +34,7 @@ subscriptions.forEach(subscription => {
           // or if this author is part of the subscription filter,
           // continue with the loop. otherwise, skip this iteration
           if (!repo.authors || repo.authors.includes(pullRequest.node.author.login)) {
-            continue
+            return
           }
           
           let thisPullRequest = {
