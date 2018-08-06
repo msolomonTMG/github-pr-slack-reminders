@@ -29,6 +29,14 @@ subscriptions.forEach(subscription => {
       if (pullRequests.length > 0) {
         
         pullRequests.forEach(pullRequest => {
+          
+          // if this repo subscription does not filter by author,
+          // or if this author is part of the subscription filter,
+          // continue with the loop. otherwise, skip this iteration
+          if (!repo.authors || repo.authors.includes(pullRequest.node.author.login)) {
+            continue
+          }
+          
           let thisPullRequest = {
             title: pullRequest.node.title,
             url: pullRequest.node.url,
