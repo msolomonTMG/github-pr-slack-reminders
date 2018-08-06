@@ -15,6 +15,13 @@ module.exports = {
           {
             owner: "groupninemedia",
             name: "auto-pylon"
+          },
+          {
+            owner: "groupninemedia",
+            name: "documentation",
+            authors: [
+              "JthenG9"
+            ]
           }
         ]
       }
