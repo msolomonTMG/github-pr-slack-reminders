@@ -18,7 +18,11 @@ get a message in Slack about open pull requests in the repos of your choosing :)
     },
     {
       owner: "name of repo owner",
-      name: "name of repo
+      name: "name of repo,
+      authors: [
+        "github username 1",
+        "github username 2"
+      ]
     }
   ]
 }
